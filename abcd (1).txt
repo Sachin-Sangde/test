@@ -1,0 +1,163 @@
+
+npm init
+npm install mysql
+npm install body-parser
+npm install nodeman
+npm install express
+------------------------------------------------------------------------------------------------------------------------------------------------
+//dbconnection
+var mysql=require("mysql");
+
+const mysqlconnection=mysql.createConnection({
+    "host":"127.0.0.1",
+    "user":"root",
+    "password":"root123",
+    "port":3306,
+    "database":"test"
+})
+mysqlconnection.connect((err)=>{
+    if(err){
+        console.log("error occured"+JSON.stringify(err));
+    }
+    else{
+        console.log("connection done")
+    }
+
+})
+
+module.exports=mysqlconnection;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+//app.js
+
+const express=require("express");
+const app=express();
+const bodyparser=require("body-parser");
+const router=require('./router/routers.js')
+
+app.use(bodyparser.urlencoded({extended:false}))
+app.use(bodyparser.json())
+
+
+
+app.use("/",router);
+
+
+app.listen(3002,function(){
+    console.log("server running at port 3002")
+})
+module.exports=app;
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+//router
+
+
+const express=require("express");
+const router=express.Router();
+const connection=require('../db/dbconnect')
+
+
+
+
+router.get("/employees",(req,resp)=>{
+    connection.query("select * from employee",(err,data)=>{
+        if(err){
+            resp.status(500).send("data not found"+JSON.stringify(err))
+        }else{
+            resp.send(data)
+        }
+    })
+})
+
+
+
+
+router.get("/employees/employee/:empid",(req,resp)=>{
+    connection.query("select * from employee where empid=?",[req.params.empid],(err,data)=>{
+        if(err){
+            resp.status(500).send("data not found"+JSON.stringify(err))
+        }else{
+            resp.send(data[0]);
+        }
+    })
+})
+
+
+
+
+
+
+router.post("/employee/employee/:eid",(req,resp)=>{
+  var empid=req.body.empid;
+  var ename=req.body.ename;
+  var sal=req.body.sal
+  connection.query("insert into employee values(?,?,?)",[empid,ename,sal],(err,result)=>{
+    console.log(result);
+    if(err){
+        resp.status(500).send("data not inserted")
+    }
+    else{
+        if(result.affectedRows> 0)
+           resp.send("{'msg':'inserted successfully'}")
+        else
+        resp.send("{'msg':'not inserted '}")
+    }
+  })
+})
+
+
+
+
+
+
+router.put("/employee/employee/:eid",(req,resp)=>{
+    var empid=req.body.empid;
+    var ename=req.body.ename;
+    var sal=req.body.sal
+    connection.query("update employee set ename=?,sal=? where empid=?",[ename,sal,empid],(err,result)=>{
+      console.log(result);
+      if(err){
+          resp.status(500).send("data not updated")
+      }
+      else{
+        if(result.affectedRows> 0)
+        resp.send("{'msg':'update successfully'}")
+     else
+     resp.send("{'msg':'not updated '}")
+      }
+    })
+  })
+
+
+
+
+
+
+
+
+  router.delete("/employee/employee/:eid",(req,resp)=>{
+    connection.query("delete from employee where empid=?",[req.params.empid],(err,result)=>{
+      console.log(result);
+      if(err){
+          resp.status(500).send("data not deleted")
+      }
+      else{
+        if(result.affectedRows> 0)
+        resp.send("{'msg':'deleted successfully'}")
+     else
+     resp.status(500).send("{'msg':'not deleted '}")
+      }
+    })
+  })
+
+
+module.exports=router;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+alter user 'root'@'localhost' IDENTIFIED WITH 'mySQL_native_password' BY 'root';
